@@ -1,0 +1,21 @@
+/* these styles apply to the entire page */
+section {
+  border: 1px solid grey;
+  padding-left: 1em;
+  margin: 1em;
+}
+body {
+  font-family: sans-serif;
+}
+table {
+  margin: 1em;
+}
+tbody > tr > td {
+  border-top: 1px solid black;
+}
+thead {
+  font-weight: bold;
+}
+svg {
+  border: 1px dashed grey;
+}
