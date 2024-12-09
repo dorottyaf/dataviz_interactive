@@ -36,7 +36,6 @@ L.TimeDimension.Layer.Choropleth = L.TimeDimension.Layer.extend({
       if (!this._map) return;
       if (!this._loaded) return;
   
-      // Dynamically reset style for all features in the layer
       this._baseLayer.eachLayer(layer => {
         if (layer.feature) {
           const newStyle = this._baseLayer.options.style(layer.feature);
@@ -46,7 +45,7 @@ L.TimeDimension.Layer.Choropleth = L.TimeDimension.Layer.extend({
     },
   
     _onNewTimeLoading: function(ev) {
-      this._update(); // Update the layer styles when the time changes
+      this._update();
     }
   });
   

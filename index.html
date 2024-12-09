@@ -1,0 +1,313 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freedom Across the World</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/leaflet.js"></script>
+    <script src="./SmoothWheelZoom.js"></script>
+    <style>
+        body {
+            margin: 0;
+        }
+        #map {
+            height: calc(100vh - 150px); 
+            margin: 0;
+        }
+        /* adjust leaflet control positions to avoid overlap with header */
+        .leaflet-top.leaflet-left {
+            margin-top: 150px;
+        }
+        /* adjust the zoom animation */
+        .leaflet-zoom-anim .leaflet-zoom-animated {
+            transition-timing-function: linear;
+            transition-duration: 100ms;
+        }
+        #header {
+            height: 100px;
+            background-color: #743c50;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding-bottom: 50;
+            padding-left: 30px;
+            justify-content: left;
+            font-size: 50px;
+            font-family: 'Georgia';
+        }
+        #data-source {
+            color: white;
+            position: absolute;
+            top: 118px;
+            right: 10px;
+        }
+        /* create stylish dropdown menu 
+        https://www.freecodecamp.org/news/html-drop-down-menu-how-to-add-a-drop-down-list-with-the-select-element/
+        https://www.freecodecamp.org/news/html-select-tag-how-to-make-a-dropdown-menu-or-combo-list/
+        */
+        .dropdown {
+            display: inline-block;
+            position: absolute;
+            top: 18px;
+            left: 400px;
+            z-index: 1000;
+        }
+
+        button{
+            border:none;
+            border-radius:5px;
+            padding:4px 8px;
+            font-size:50px;
+            font-family: 'Georgia';
+            cursor:pointer;
+        }
+
+        button:hover{
+            background-color:#ddd;
+        }
+
+        .dropdown-options {
+            display: none;
+            position: absolute;
+            overflow: auto;
+            background-color:#fff;
+            border-radius:2px;
+            box-shadow: 0px 10px 10px 0px rgba(0,0,0,0.4);
+        }
+
+        .dropdown:hover .dropdown-options {
+            display: block;
+        }
+
+        .dropdown-options a {
+            display: block;
+            color: #000000;
+            padding: 5px;
+            text-decoration: none;
+            padding:20px 40px;
+        }
+
+        .dropdown-options a:hover {
+            color: #0a0a23;
+            background-color: #ddd;
+            border-radius:5px;
+        }
+        /* https://gis.stackexchange.com/questions/212820/overriding-leaflet-tooltip-style */
+        .leaflet-tooltip {
+            padding: 6px 8px;
+            font-family: 'Lato', sans-serif;
+            font-size: 14px;
+        }
+
+        /* container to space buttons evenly
+        https://www.geeksforgeeks.org/how-to-create-a-group-of-buttons-with-evenly-space-in-css/ */
+        .container {
+            position: absolute;
+            top: 105px;
+            left: 30px;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        /* make map selecting buttons */
+        .mapbutton {
+            border: 1px solid white;
+            border-radius:0;
+            padding:4px 8px;
+            font-size:18px;
+            background-color: #743c50;
+            font-family: 'Lato', sans-serif;
+            cursor:pointer;
+            display: inline-block;
+            color: white;
+        }
+        .mapbutton:hover {
+            background-color: #a06177;
+        }
+
+        .mapbutton:active {
+            background-color: #a06177;
+        }
+        .mapbutton.selected{
+            background-color: #a06177;
+        }
+        .info.legend {
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 2px solid #ccc;
+            padding: 10px;
+            height: 150px;
+            position: relative;
+            left: 30px;
+        }
+        .legend-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-evenly;
+            align-items: flex-start;
+            padding-top: 80px;
+        }
+        .legend-item {
+            text-align: center;
+            margin: 0 10px;
+        }
+        .legend-item i {
+            border-radius: 3px;
+            display: block;
+            width: 30px;
+            height: 30px;
+            margin: 0 auto;
+        }
+        .legend-item span {
+            display: block;
+            margin-top: 5px;
+            font-size: 14px;
+            white-space: normal;
+        }
+    </style>
+</head>
+<body>
+    <div id = "header">
+        Freedom Across
+    </div>
+    <div id = "data-source">
+        <i>Source: Freedom House Index</i>
+    </div>
+    <div class="dropdown">
+        <button id="dropdownButton">the World</button>
+        <div class="dropdown-options">
+            <a href="#" onclick="selectOption(event, 'the World')">the World</a>
+            <a href="#" onclick="selectOption(event, 'North America')">North America</a>
+            <a href="#" onclick="selectOption(event, 'Central America')">Central America</a>
+            <a href="#" onclick="selectOption(event, 'South America')">South America</a>
+            <a href="#" onclick="selectOption(event, 'Europe')">Europe</a>
+            <a href="#" onclick="selectOption(event, 'Africa')">Africa</a>
+            <a href="#" onclick="selectOption(event, 'Oceania')">Oceania</a>
+            <a href="#" onclick="selectOption(event, 'Asia')">Asia</a>
+            <a href="#" onclick="selectOption(event, 'the Middle East')">the Middle East</a>
+        </div>
+    </div>
+    <div class = "container">
+        <button class = "mapbutton" id="globalFreedom" layer = "timeDimensionFreedom" onclick = "changeLayer(event)">Global Freedom</button>
+        <button class = "mapbutton" layer = "timeDimensionElections" onclick = "changeLayer(event)">Freedom of Elections</button>
+        <button class = "mapbutton" layer = "timeDimensionMedia" onclick = "changeLayer(event)">Freedom of Media</button>
+        <button class = "mapbutton" layer = "timeDimensionMinority" onclick = "changeLayer(event)">Freedom of Minority Groups</button>
+        <button class = "mapbutton" layer = "timeDimensionSpeech" onclick = "changeLayer(event)">Freedom of Speech</button>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <!--https://codedamn.com/news/javascript/how-to-read-csv-with-javascript-->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    <script src="https://unpkg.com/leaflet-geojson-vt@0.8.0"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.5.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-timedimension@1.1.1/dist/leaflet.timedimension.control.min.css" />
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/leaflet@1.5.1/dist/leaflet.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/iso8601-js-period@0.2.1/iso8601.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/leaflet-timedimension@1.1.1/dist/leaflet.timedimension.min.js"></script>
+
+    <script type="module" src = "js2/map_freedom.js"></script>
+    <script type="module" src = "js2/map_minority.js"></script>
+    <script type="module" src = "js2/map_media.js"></script>
+    <script type="module" src = "js2/map_speech.js"></script>
+    <script type="module" src = "js2/map_elections.js"></script>
+
+    <script>
+        let layerDict = {}
+        let layers = []
+        let legend1;
+        let legend2;
+        window.addEventListener('timeDimensionFreedomReady', () => {
+            console.log('timeDimensionFreedom is ready in HTML:', window.timeDimensionFreedom);
+            document.getElementById('globalFreedom').click();
+            window.timeDimensionFreedom.addTo(window.map);
+            layerDict["timeDimensionFreedom"] = timeDimensionFreedom;
+            layers.push(timeDimensionFreedom)
+            window.legend.addTo(window.map)
+            legend1 = window.legend
+        });
+        window.addEventListener('timeDimensionMinorityReady', () => {
+            layerDict["timeDimensionMinority"] = timeDimensionMinority;
+            layers.push(timeDimensionMinority);
+            console.info("minority ready")
+            legend2 = window.legendNumbers
+            console.info(legend2)
+        });
+        window.addEventListener('timeDimensionElectionsReady', () => {
+            layerDict["timeDimensionElections"] = timeDimensionElections;
+            layers.push(timeDimensionElections);
+            console.info("elections ready")
+        });
+        window.addEventListener('timeDimensionSpeechReady', () => {
+            layerDict["timeDimensionSpeech"] = timeDimensionSpeech;
+            layers.push(timeDimensionSpeech);
+            console.info("speech ready")
+        });
+        window.addEventListener('timeDimensionMediaReady', () => {
+            layerDict["timeDimensionMedia"] = timeDimensionMedia;
+            layers.push(timeDimensionMedia);
+            console.info("media is ready")
+        });
+
+        function changeLayer(event) {
+            document.querySelectorAll('.mapbutton').forEach(button => {
+                button.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+            // remove all choropleth map layers
+            layers.forEach(layer => {
+                window.map.removeLayer(layer);
+            });
+            // remove legends
+            window.legend.remove();
+            window.legendNumbers.remove();
+            console.info(layers)
+            const layerName = event.target.getAttribute('layer');
+            const layerNew = layerDict[layerName];
+            console.info(layerName, layerNew)
+            layerNew.addTo(window.map);
+            if (layerName === "timeDimensionFreedom") {
+                window.legend.addTo(window.map);
+                window.map.timeDimension.setCurrentTime(new Date("1972-01-01").getTime());
+                window.map.timeDimension.setAvailableTimes("1972/2023");
+                console.info("in freedom", layerNew)
+            } else {
+                window.legendNumbers.addTo(window.map);
+                window.map.timeDimension.setCurrentTime(new Date("2014-01-01").getTime());
+                window.map.timeDimension.setAvailableTimes("2014/2024");
+                console.info("in minority", layerNew);
+            }
+        }
+
+    </script>
+    <script>
+        // approximate bounds for each region
+        // http://bboxfinder.com/#32.450679,-335.928955,77.131802,-177.725830
+        const boundsMap = {
+            'Europe': [[33.405078,-12.911682], [62.538295,42.459412]],
+            'North America': [[8.807047,-145.876465], [62.536711,-63.083496]],
+            'South America': [[-56, -80], [12, -35]],
+            'Central America': [[3.493888,-108.218422], [30.128203,-54.605141]],
+            'Africa': [[-35, -20], [37, 55]],
+            'Oceania': [[-49.308113,96.915894], [8.693712,180.060425]],
+            'Asia': [[-2.135659,19.026947], [65.863777,152.050095]],
+            'the Middle East': [[9.993196,19.026947], [42.311847,67.191010]]
+        };
+
+        // update button text and map bounds when an option is selected
+        function selectOption(event, option) {
+            const button = document.getElementById('dropdownButton');
+            button.textContent = option;
+            // update map bounds or reset if they chose the World
+            if (option === 'the World') {
+                map.setView([15, 0], 2.5);
+            } else if (boundsMap[option]) {
+                map.fitBounds(boundsMap[option]);
+            }
+        }
+        
+    </script>
+
+</body>
+</html>
